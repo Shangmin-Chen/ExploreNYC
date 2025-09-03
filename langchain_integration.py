@@ -13,9 +13,10 @@ from typing import Dict, List, Any, Optional, TypedDict, Annotated
 import json
 from datetime import datetime, timedelta
 from config import Config
-from utils.constants import DEFAULT_EVENTS, RATE_LIMIT_SECONDS, MAX_RECOMMENDATIONS
+from utils.constants import RATE_LIMIT_SECONDS, MAX_RECOMMENDATIONS
 from utils.date_utils import process_time_frames, calculate_this_weekend
 from utils.error_handling import handle_api_error, log_error
+from services.event_service import EventService
 
 # Define the state for our LangGraph workflow
 class EventExplorerState(TypedDict):
@@ -41,73 +42,49 @@ def nyc_event_search(category: str = None, location: str = None, keywords: str =
         JSON string containing list of matching events
     """
     try:
-        # Build criteria from parameters
-        criteria = {}
-        if category:
-            criteria["category"] = category
-        if location:
-            criteria["location"] = location
-        if keywords:
-            criteria["keywords"] = keywords
+        # Initialize event service
+        event_service = EventService()
+        
+        # Parse date range
+        start_date = None
+        end_date = None
         if date_range:
-            criteria["date_range"] = date_range.split(",") if "," in date_range else [date_range, date_range]
+            date_parts = date_range.split(",")
+            if len(date_parts) >= 2:
+                start_date = date_parts[0].strip()
+                end_date = date_parts[1].strip()
+            else:
+                start_date = date_parts[0].strip()
+                end_date = date_parts[0].strip()
         
-        # Use default events with calculated dates
-        current_date = datetime.now()
+        # Set default location if not provided
+        search_location = location if location else "New York, NY"
         
-        # Calculate dates for realistic event scheduling
-        saturday, sunday = calculate_this_weekend(current_date)
-        next_monday = saturday + timedelta(days=2)
-        next_tuesday = next_monday + timedelta(days=1)
-        next_wednesday = next_monday + timedelta(days=2)
-        next_thursday = next_monday + timedelta(days=3)
+        # Convert category to list if provided
+        categories = [category] if category else None
         
-        # Create events with calculated dates
-        mock_events = []
-        for i, event_template in enumerate(DEFAULT_EVENTS):
-            event = event_template.copy()
-            # Assign dates based on event index
-            date_map = [saturday, next_monday, next_tuesday, next_wednesday, next_thursday]
-            if i < len(date_map):
-                event["date"] = date_map[i].strftime("%Y-%m-%d")
-            mock_events.append(event)
+        # Search for events using the unified service
+        events = event_service.search_events(
+            location=search_location,
+            categories=categories,
+            start_date=start_date,
+            end_date=end_date,
+            keywords=keywords,
+            limit_per_service=25
+        )
         
-        # Filter events based on criteria
-        filtered_events = []
-        for event in mock_events:
-            # Category filter
-            if criteria.get("category") and criteria["category"].lower() not in event["category"].lower():
-                continue
-            
-            # Location filter
-            if criteria.get("location") and criteria["location"].lower() not in event["location"].lower():
-                continue
-            
-            # Date range filter (if specified in criteria)
-            if criteria.get("date_range"):
-                try:
-                    event_date = datetime.strptime(event["date"], "%Y-%m-%d").date()
-                    start_date = datetime.strptime(criteria["date_range"][0], "%Y-%m-%d").date()
-                    end_date = datetime.strptime(criteria["date_range"][1], "%Y-%m-%d").date()
-                    
-                    if not (start_date <= event_date <= end_date):
-                        continue
-                except (ValueError, TypeError):
-                    # If date parsing fails, continue without date filtering
-                    pass
-            
-            # Keyword filter
-            if criteria.get("keywords"):
-                keywords = criteria["keywords"].lower()
-                event_text = f"{event['title']} {event['description']} {' '.join(event.get('tags', []))}".lower()
-                if not any(keyword in event_text for keyword in keywords.split()):
-                    continue
-            
-            filtered_events.append(event)
+        # Convert datetime objects to strings for JSON serialization
+        serializable_events = []
+        for event in events:
+            serializable_event = event.copy()
+            if event.get('date') and isinstance(event['date'], datetime):
+                serializable_event['date'] = event['date'].strftime("%Y-%m-%d")
+            serializable_events.append(serializable_event)
         
-        return json.dumps(filtered_events, indent=2)
+        return json.dumps(serializable_events, indent=2)
         
     except Exception as e:
+        log_error(e, "nyc_event_search")
         return f"Error searching events: {str(e)}"
 
 @tool

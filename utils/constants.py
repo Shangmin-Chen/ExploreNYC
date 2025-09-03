@@ -30,64 +30,7 @@ NYC_COORDINATES: Dict[str, Tuple[float, float]] = {
     'greenwich village': (40.7335, -73.9976)
 }
 
-# Default event data for MVP
-DEFAULT_EVENTS = [
-    {
-        "title": "Underground Art Show",
-        "description": "Emerging artists showcase at secret Brooklyn location",
-        "category": "Art",
-        "location": "Brooklyn",
-        "price": "Free",
-        "url": "https://example.com/event1",
-        "venue": "Secret Brooklyn Gallery",
-        "time": "7:00 PM",
-        "tags": ["art", "underground", "emerging artists"]
-    },
-    {
-        "title": "Jazz Night at Blue Note",
-        "description": "Live jazz performance with local musicians",
-        "category": "Music",
-        "location": "Manhattan",
-        "price": "$25",
-        "url": "https://example.com/event2",
-        "venue": "Blue Note Jazz Club",
-        "time": "8:00 PM",
-        "tags": ["jazz", "live music", "nightlife"]
-    },
-    {
-        "title": "Food Truck Festival",
-        "description": "50+ food trucks in Central Park",
-        "category": "Food",
-        "location": "Central Park",
-        "price": "Free entry",
-        "url": "https://example.com/event3",
-        "venue": "Central Park",
-        "time": "12:00 PM",
-        "tags": ["food", "outdoor", "family-friendly"]
-    },
-    {
-        "title": "Comedy Night at The Comedy Cellar",
-        "description": "Stand-up comedy featuring NYC's best comedians",
-        "category": "Entertainment",
-        "location": "Manhattan",
-        "price": "$20",
-        "url": "https://example.com/event4",
-        "venue": "The Comedy Cellar",
-        "time": "9:00 PM",
-        "tags": ["comedy", "stand-up", "nightlife"]
-    },
-    {
-        "title": "Brooklyn Bridge Walking Tour",
-        "description": "Guided historical walking tour of the Brooklyn Bridge",
-        "category": "Outdoor",
-        "location": "Brooklyn",
-        "price": "$15",
-        "url": "https://example.com/event5",
-        "venue": "Brooklyn Bridge",
-        "time": "10:00 AM",
-        "tags": ["outdoor", "history", "walking tour"]
-    }
-]
+# Mock data removed - now using real APIs
 
 # Time frame options
 TIME_FRAME_OPTIONS = [

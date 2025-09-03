@@ -16,12 +16,10 @@ class Config:
     LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
     LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
     
-    # NYC Open Data API
-    NYC_APP_TOKEN = os.getenv("NYC_APP_TOKEN")
+    # NYC Open Data API (no token required - completely free and open)
     
     # Event APIs
     EVENTBRITE_API_KEY = os.getenv("EVENTBRITE_API_KEY")
-    MEETUP_API_KEY = os.getenv("MEETUP_API_KEY")
     
     # App Settings
     APP_TITLE = "ExploreNYC - AI Event Explorer"
