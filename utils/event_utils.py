@@ -1,6 +1,15 @@
 """
 Event processing utilities for the ExploreNYC application.
-Handles event data processing, filtering, and management.
+
+This module handles comprehensive event data processing including:
+- Event data standardization and validation
+- Event filtering and sorting
+- Keyword-based event search
+- Event statistics and analytics
+- Personalized recommendation generation
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import pandas as pd
@@ -8,16 +17,27 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import requests
 import json
+
+# Local imports
 from config import Config
 from .constants import DATE_FORMATS, MAX_EVENTS_DISPLAY
 from .date_utils import parse_date_string
 from .error_handling import safe_execute, log_error
 
 class EventProcessor:
-    """Handles event data processing and management."""
+    """
+    Handles event data processing and management.
+    
+    This class provides comprehensive event data processing capabilities including
+    data standardization, filtering, sorting, and recommendation generation.
+    """
     
     def __init__(self):
-        """Initialize the EventProcessor."""
+        """
+        Initialize the EventProcessor.
+        
+        Sets up internal caching and tracking for event data processing.
+        """
         self.events_cache = []
         self.last_update = None
         
@@ -51,13 +71,17 @@ class EventProcessor:
         """Parse date string into datetime object."""
         return parse_date_string(date_str)
     
-    def _parse_price(self, price_str: str) -> Dict[str, Any]:
+    def _parse_price(self, price_data) -> Dict[str, Any]:
         """Parse price information."""
-        if not price_str:
+        if not price_data:
             return {'min': 0, 'max': 0, 'currency': 'USD', 'display': 'Free'}
         
+        # If already a dictionary, return as is
+        if isinstance(price_data, dict):
+            return price_data
+        
         # Handle common price formats
-        price_str = price_str.lower().strip()
+        price_str = str(price_data).lower().strip()
         
         if 'free' in price_str or price_str == '0':
             return {'min': 0, 'max': 0, 'currency': 'USD', 'display': 'Free'}

@@ -1,6 +1,19 @@
 """
 LangGraph integration for the ExploreNYC Event Explorer.
-Handles AI-powered event recommendations and natural language processing using LangGraph workflows.
+
+This module provides AI-powered event recommendations and natural language processing
+using LangGraph workflows. It integrates with Cohere's language models to provide
+intelligent event discovery and personalized recommendations.
+
+Features:
+- Natural language query processing
+- AI-powered event search and recommendations
+- LangGraph workflow orchestration
+- Tool integration for event data access
+- Rate limiting and error handling
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 from langchain_cohere import ChatCohere
@@ -12,6 +25,8 @@ from langchain_core.tools import tool
 from typing import Dict, List, Any, Optional, TypedDict, Annotated
 import json
 from datetime import datetime, timedelta
+
+# Local imports
 from config import Config
 from utils.constants import RATE_LIMIT_SECONDS, MAX_RECOMMENDATIONS
 from utils.date_utils import process_time_frames, calculate_this_weekend

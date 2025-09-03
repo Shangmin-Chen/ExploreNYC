@@ -1,12 +1,26 @@
 """
 ExploreNYC - AI-Powered Event Explorer
-A Streamlit application using LangChain for discovering NYC events.
+
+A Streamlit application that uses LangChain and AI to help users discover
+NYC events from multiple sources including Eventbrite and NYC Open Data.
+
+Features:
+- AI-powered event recommendations using Cohere
+- Real-time event data from multiple APIs
+- Interactive chat interface
+- Personalized event filtering
+- Beautiful, responsive UI
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
+
+# Local imports
 from config import Config
 from langchain_integration import EventExplorerAgent
 from utils.event_utils import EventProcessor
@@ -60,49 +74,77 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def initialize_session_state():
-    """Initialize session state variables."""
+    """
+    Initialize Streamlit session state variables.
+    
+    This function sets up the core components needed for the application:
+    - AI agent for processing user queries
+    - Event processor for handling event data
+    - Conversation history for chat functionality
+    - User preferences for personalized recommendations
+    
+    Returns:
+        None
+    """
+    # Initialize AI agent if not already present
     if 'agent' not in st.session_state:
         st.session_state.agent = EventExplorerAgent()
     
+    # Initialize event processor for data handling
     if 'event_processor' not in st.session_state:
         st.session_state.event_processor = EventProcessor()
     
+    # Initialize conversation history for chat interface
     if 'conversation_history' not in st.session_state:
         st.session_state.conversation_history = []
     
+    # Initialize user preferences for personalization
     if 'user_preferences' not in st.session_state:
         st.session_state.user_preferences = {}
 
 def main():
-    """Main application function."""
+    """
+    Main application function that orchestrates the entire Streamlit app.
+    
+    This function:
+    1. Initializes session state
+    2. Sets up the UI layout with header and sidebar
+    3. Handles user interactions and chat functionality
+    4. Manages the conversation flow and AI responses
+    
+    Returns:
+        None
+    """
+    # Initialize all required session state variables
     initialize_session_state()
     
-    # Header
+    # Application header with branding
     st.markdown('<h1 class="main-header">🗽 ExploreNYC</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Discover NYC\'s hidden gems and mainstream events with AI-powered recommendations</p>', unsafe_allow_html=True)
     
-    # Sidebar for user preferences
+    # Sidebar for user preferences and system status
     with st.sidebar:
         st.header("🎯 Your Preferences")
         
-        # User preferences form
+        # Render user preferences form and store in session state
         user_preferences = render_preferences_sidebar()
         st.session_state.user_preferences = user_preferences
         
-        # API Status
+        # Display API connection status
         st.header("📊 Status")
         if Config.COHERE_API_KEY:
             st.success("✅ Cohere Connected")
         else:
             st.error("❌ Cohere API Key Missing")
     
-    # Main content area
+    # Main content area with two-column layout
     col1, col2 = st.columns([2, 1])
     
+    # Left column: Chat interface
     with col1:
         st.header("💬 Chat with Your Event Explorer")
         
-        # Chat interface
+        # Chat interface container
         chat_container = st.container()
         
         # Display conversation history
@@ -111,34 +153,38 @@ def main():
                 with st.chat_message(message["role"]):
                     st.write(message["content"])
         
-        # User input
+        # User input field for chat
         user_input = st.chat_input("Ask me about NYC events! e.g., 'Find underground art shows this weekend'")
         
+        # Process user input when provided
         if user_input:
-            # Add user message to history
+            # Add user message to conversation history
             st.session_state.conversation_history.append({"role": "user", "content": user_input})
             
-            # Get AI response
+            # Get AI response with loading indicator
             with st.spinner("🤖 Finding amazing events for you..."):
                 try:
+                    # Process query through AI agent with user preferences
                     response = st.session_state.agent.process_query(
                         user_input, 
                         st.session_state.user_preferences
                     )
                     
-                    # Add AI response to history
+                    # Add AI response to conversation history
                     st.session_state.conversation_history.append({"role": "assistant", "content": response})
                     
-                    # Rerun to show new messages
+                    # Rerun to display new messages
                     st.rerun()
                     
                 except Exception as e:
+                    # Display error message if query processing fails
                     st.error(f"Error: {str(e)}")
     
+    # Right column: Quick suggestions and insights
     with col2:
         st.header("📅 Quick Suggestions")
         
-        # Quick action buttons
+        # Quick action buttons for common event categories
         if st.button("🎨 Art & Culture"):
             suggested_query = "Find art galleries and cultural events happening this week"
             st.session_state.conversation_history.append({"role": "user", "content": suggested_query})
@@ -159,11 +205,11 @@ def main():
             st.session_state.conversation_history.append({"role": "user", "content": suggested_query})
             st.rerun()
         
-        # Event statistics
+        # Event statistics section
         st.header("📊 Event Insights")
         st.info("📈 Event statistics will be available once you search for events!")
     
-    # Footer
+    # Application footer
     st.markdown("---")
     st.markdown("Built with ❤️ using Streamlit and LangChain | ExploreNYC © 2024")
 

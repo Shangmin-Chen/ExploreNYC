@@ -1,22 +1,38 @@
 """
 Constants and configuration values for the ExploreNYC application.
+
+This module contains all application constants including:
+- Event categories and types
+- NYC neighborhoods and locations
+- UI configuration options
+- API rate limiting settings
+- Default values and preferences
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 from typing import Dict, List, Tuple
 
+# =============================================================================
 # Event Categories
+# =============================================================================
+
 EVENT_CATEGORIES = [
     'Art & Culture', 'Music & Concerts', 'Food & Dining', 
     'Outdoor Activities', 'Sports', 'Nightlife', 'Education', 'Family'
 ]
 
-# NYC Neighborhoods
+# =============================================================================
+# NYC Locations and Neighborhoods
+# =============================================================================
+
 NYC_NEIGHBORHOODS = [
     'Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island',
     'Greenwich Village', 'SoHo', 'Williamsburg', 'LES', 'Upper East Side'
 ]
 
-# Mock coordinates for NYC areas
+# Geographic coordinates for NYC areas (used for mapping)
 NYC_COORDINATES: Dict[str, Tuple[float, float]] = {
     'manhattan': (40.7831, -73.9712),
     'brooklyn': (40.6782, -73.9442),
@@ -30,19 +46,21 @@ NYC_COORDINATES: Dict[str, Tuple[float, float]] = {
     'greenwich village': (40.7335, -73.9976)
 }
 
-# Mock data removed - now using real APIs
+# =============================================================================
+# User Interface Options
+# =============================================================================
 
-# Time frame options
+# Time frame selection options
 TIME_FRAME_OPTIONS = [
     "Today", "This weekend", "This week", "Next week", "This month", "Anytime"
 ]
 
-# Budget options
+# Budget preference options
 BUDGET_OPTIONS = [
     "Any budget", "Free only", "Under $25", "Under $50", "Custom range"
 ]
 
-# Accessibility options
+# Accessibility requirement options
 ACCESSIBILITY_OPTIONS = [
     "Wheelchair accessible", "Sign language interpretation", 
     "Audio description", "Large print materials"
@@ -53,17 +71,29 @@ GROUP_SIZE_OPTIONS = [
     "Just me", "2 people", "Small group (3-6)", "Large group (7+)"
 ]
 
-# Date formats for parsing
+# =============================================================================
+# Date and Time Configuration
+# =============================================================================
+
+# Supported date formats for parsing
 DATE_FORMATS = [
     '%Y-%m-%d', '%m/%d/%Y', '%B %d, %Y', '%Y-%m-%d %H:%M:%S'
 ]
 
-# Rate limiting settings
+# =============================================================================
+# API and Performance Settings
+# =============================================================================
+
+# Rate limiting configuration
 RATE_LIMIT_SECONDS = 6  # 6 seconds between requests = 10 per minute
 MAX_RECOMMENDATIONS = 3
 MAX_EVENTS_DISPLAY = 20
 
-# UI Configuration
+# =============================================================================
+# Default Configuration Values
+# =============================================================================
+
+# Default user preferences
 DEFAULT_CATEGORIES = ['Art & Culture', 'Food & Dining']
 DEFAULT_NEIGHBORHOODS = ['Manhattan']
 DEFAULT_BUDGET = {'min': 0, 'max': 1000}

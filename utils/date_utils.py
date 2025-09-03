@@ -1,5 +1,14 @@
 """
 Date and time utility functions for the ExploreNYC application.
+
+This module provides comprehensive date and time handling including:
+- Date range calculations (weekend, week, month)
+- Date string parsing and formatting
+- Time frame processing for user queries
+- Date validation and conversion utilities
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import re
@@ -7,7 +16,15 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple, Dict, Any
 
 def calculate_this_weekend(current_date: datetime) -> Tuple[datetime, datetime]:
-    """Calculate this weekend's date range."""
+    """
+    Calculate this weekend's date range (Saturday to Sunday).
+    
+    Args:
+        current_date (datetime): The current date to calculate from
+        
+    Returns:
+        Tuple[datetime, datetime]: Start and end dates for this weekend
+    """
     days_until_saturday = (5 - current_date.weekday()) % 7
     if days_until_saturday == 0:  # Today is Saturday
         saturday = current_date
@@ -95,11 +112,22 @@ def parse_date_string(date_str: str) -> Optional[datetime]:
         return None
 
 def process_time_frames(user_input: str) -> str:
-    """Process user input to extract and calculate time frames."""
+    """
+    Process user input to extract and calculate time frames.
+    
+    This function identifies time-related keywords in user input and appends
+    the corresponding date ranges to help the AI agent understand temporal context.
+    
+    Args:
+        user_input (str): The user's input text to process
+        
+    Returns:
+        str: Processed input with date range information appended
+    """
     current_date = datetime.now()
     processed_input = user_input
     
-    # Define time frame patterns and their calculations
+    # Define time frame patterns and their corresponding calculation functions
     time_patterns = {
         r'\bthis weekend\b': calculate_this_weekend,
         r'\bnext weekend\b': calculate_next_weekend,
@@ -113,7 +141,7 @@ def process_time_frames(user_input: str) -> str:
         r'\bthis evening\b': calculate_this_evening,
     }
     
-    # Process each pattern
+    # Process each time pattern found in the input
     for pattern, calculator in time_patterns.items():
         if re.search(pattern, user_input, re.IGNORECASE):
             date_range = calculator(current_date)

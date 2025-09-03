@@ -1,6 +1,16 @@
 """
 Eventbrite API service for fetching real event data.
-Handles authentication, rate limiting, and data processing for Eventbrite events.
+
+This module handles interaction with the Eventbrite API, including:
+- Authentication and API key management
+- Rate limiting and request throttling
+- Event data fetching and processing
+- Data transformation to standardized format
+
+Note: Currently experiencing API endpoint issues (404 errors) that need resolution.
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import requests
@@ -8,15 +18,27 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import time
+
+# Local imports
 from config import Config
-from utils.error_handling import log_error, handle_api_error
+from utils.error_handling import log_error, handle_api_error, APIError
 from utils.date_utils import parse_date_string
 
 class EventbriteService:
-    """Service for interacting with the Eventbrite API."""
+    """
+    Service for interacting with the Eventbrite API.
+    
+    This class handles all communication with the Eventbrite API, including
+    authentication, rate limiting, and data processing.
+    """
     
     def __init__(self):
-        """Initialize the Eventbrite service."""
+        """
+        Initialize the Eventbrite service.
+        
+        Raises:
+            ValueError: If Eventbrite API key is not configured
+        """
         self.api_key = Config.EVENTBRITE_API_KEY
         self.base_url = "https://www.eventbriteapi.com/v3"
         self.rate_limit_delay = 1  # 1 second between requests
@@ -26,8 +48,20 @@ class EventbriteService:
             raise ValueError("Eventbrite API key not found. Please set EVENTBRITE_API_KEY in your environment.")
     
     def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Make a rate-limited request to the Eventbrite API."""
-        # Rate limiting
+        """
+        Make a rate-limited request to the Eventbrite API.
+        
+        Args:
+            endpoint (str): API endpoint to call
+            params (Dict[str, Any], optional): Query parameters
+            
+        Returns:
+            Dict[str, Any]: JSON response from the API
+            
+        Raises:
+            APIError: If the API request fails
+        """
+        # Implement rate limiting
         current_time = time.time()
         time_since_last = current_time - self.last_request_time
         if time_since_last < self.rate_limit_delay:
@@ -48,7 +82,7 @@ class EventbriteService:
             return response.json()
         except requests.exceptions.RequestException as e:
             log_error(e, f"Eventbrite API request failed: {endpoint}")
-            raise handle_api_error(e)
+            raise APIError(handle_api_error(e))
     
     def search_events(self, 
                      location: str = "New York, NY",

@@ -1,5 +1,16 @@
 """
 Error handling utilities for the ExploreNYC application.
+
+This module provides comprehensive error handling including:
+- Custom exception classes
+- User-friendly error messages
+- API error handling and translation
+- Validation error handling
+- Safe execution wrappers
+- Logging and error tracking
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 from typing import Optional, Dict, Any
@@ -9,20 +20,43 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# =============================================================================
+# Custom Exception Classes
+# =============================================================================
+
 class ExploreNYCError(Exception):
-    """Base exception for ExploreNYC application."""
+    """
+    Base exception class for all ExploreNYC application errors.
+    
+    This serves as the parent class for all custom exceptions in the application.
+    """
     pass
 
 class APIError(ExploreNYCError):
-    """Exception raised for API-related errors."""
+    """
+    Exception raised for API-related errors.
+    
+    This includes network errors, API rate limits, authentication failures,
+    and other issues related to external API communication.
+    """
     pass
 
 class ConfigurationError(ExploreNYCError):
-    """Exception raised for configuration-related errors."""
+    """
+    Exception raised for configuration-related errors.
+    
+    This includes missing API keys, invalid configuration values,
+    and other setup-related issues.
+    """
     pass
 
 class ValidationError(ExploreNYCError):
-    """Exception raised for data validation errors."""
+    """
+    Exception raised for data validation errors.
+    
+    This includes invalid input data, missing required fields,
+    and other data integrity issues.
+    """
     pass
 
 def handle_api_error(error: Exception) -> str:

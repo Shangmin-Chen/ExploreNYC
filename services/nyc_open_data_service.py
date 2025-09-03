@@ -1,6 +1,16 @@
 """
 NYC Open Data service for fetching free public event data.
-Uses the NYC Open Data API to get information about public events, permits, and activities.
+
+This module handles interaction with the NYC Open Data API, providing access to:
+- Public events and activities
+- Community events and permits
+- Free event data without API key requirements
+- Real-time event information from NYC agencies
+
+The NYC Open Data API is completely free and open, requiring no authentication.
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import requests
@@ -8,15 +18,27 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import time
+
+# Local imports
 from config import Config
-from utils.error_handling import log_error, handle_api_error
+from utils.error_handling import log_error, handle_api_error, APIError
 from utils.date_utils import parse_date_string
 
 class NYCOpenDataService:
-    """Service for interacting with the NYC Open Data API."""
+    """
+    Service for interacting with the NYC Open Data API.
+    
+    This class provides access to NYC's open data portal, specifically the
+    NYC Events API which contains information about public events, permits,
+    and activities throughout the city.
+    """
     
     def __init__(self):
-        """Initialize the NYC Open Data service."""
+        """
+        Initialize the NYC Open Data service.
+        
+        Note: No API key is required for NYC Open Data API access.
+        """
         self.base_url = "https://data.cityofnewyork.us/resource"
         self.rate_limit_delay = 1  # 1 second between requests
         self.last_request_time = 0
@@ -45,7 +67,7 @@ class NYCOpenDataService:
             return response.json()
         except requests.exceptions.RequestException as e:
             log_error(e, f"NYC Open Data API request failed: {endpoint}")
-            raise handle_api_error(e)
+            raise APIError(handle_api_error(e))
     
     def search_events(self, 
                      location: str = "New York, NY",

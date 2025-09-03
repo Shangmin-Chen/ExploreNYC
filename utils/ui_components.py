@@ -1,6 +1,15 @@
 """
 UI components and utilities for the Streamlit interface.
-Contains reusable components for the ExploreNYC application.
+
+This module contains reusable UI components for the ExploreNYC application including:
+- Event card rendering and display
+- User preference forms and widgets
+- Interactive maps and visualizations
+- Event statistics and analytics displays
+- Search filters and form components
+
+Author: ExploreNYC Team
+Version: 1.0.0
 """
 
 import streamlit as st
@@ -9,6 +18,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import plotly.express as px
 import plotly.graph_objects as go
+
+# Local imports
 from .constants import (
     EVENT_CATEGORIES, NYC_NEIGHBORHOODS, NYC_COORDINATES, TIME_FRAME_OPTIONS,
     BUDGET_OPTIONS, ACCESSIBILITY_OPTIONS, GROUP_SIZE_OPTIONS, DEFAULT_CATEGORIES,
