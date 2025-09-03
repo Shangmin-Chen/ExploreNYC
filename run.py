@@ -13,8 +13,8 @@ def check_requirements():
     """Check if all requirements are installed."""
     try:
         import streamlit
-        import langchain
-        import cohere
+        import langchain_cohere
+        import langgraph
         print("✅ All required packages are installed")
         return True
     except ImportError as e:

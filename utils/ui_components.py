@@ -9,6 +9,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import plotly.express as px
 import plotly.graph_objects as go
+from .constants import (
+    EVENT_CATEGORIES, NYC_NEIGHBORHOODS, NYC_COORDINATES, TIME_FRAME_OPTIONS,
+    BUDGET_OPTIONS, ACCESSIBILITY_OPTIONS, GROUP_SIZE_OPTIONS, DEFAULT_CATEGORIES,
+    DEFAULT_NEIGHBORHOODS, DEFAULT_BUDGET
+)
+from .date_utils import get_date_range_for_time_preference, format_date_for_display
 
 def render_event_card(event: Dict[str, Any]) -> None:
     """Render a single event card."""
@@ -51,19 +57,17 @@ def render_preferences_sidebar() -> Dict[str, Any]:
     
     # Event categories
     st.subheader("🎭 Event Categories")
-    categories = ['Art & Culture', 'Music & Concerts', 'Food & Dining', 
-                 'Outdoor Activities', 'Sports', 'Nightlife', 'Education', 'Family']
     preferences['categories'] = st.multiselect(
         "Select your interests:",
-        categories,
-        default=['Art & Culture', 'Food & Dining']
+        EVENT_CATEGORIES,
+        default=DEFAULT_CATEGORIES
     )
     
     # Budget preferences
     st.subheader("💰 Budget")
     budget_option = st.radio(
         "Price preference:",
-        ["Any budget", "Free only", "Under $25", "Under $50", "Custom range"]
+        BUDGET_OPTIONS
     )
     
     if budget_option == "Free only":
@@ -77,52 +81,34 @@ def render_preferences_sidebar() -> Dict[str, Any]:
         max_price = st.number_input("Maximum price ($)", min_value=0, value=100)
         preferences['budget'] = {'min': min_price, 'max': max_price}
     else:
-        preferences['budget'] = {'min': 0, 'max': 1000}
+        preferences['budget'] = DEFAULT_BUDGET
     
     # Location preferences
     st.subheader("📍 Neighborhoods")
-    neighborhoods = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island',
-                    'Greenwich Village', 'SoHo', 'Williamsburg', 'LES', 'Upper East Side']
     preferences['neighborhoods'] = st.multiselect(
         "Preferred areas:",
-        neighborhoods,
-        default=['Manhattan']
+        NYC_NEIGHBORHOODS,
+        default=DEFAULT_NEIGHBORHOODS
     )
     
     # Time preferences
     st.subheader("⏰ When")
     time_preference = st.selectbox(
         "Time frame:",
-        ["Today", "This weekend", "This week", "Next week", "This month", "Anytime"]
+        TIME_FRAME_OPTIONS
     )
     preferences['time_frame'] = time_preference
     
     # Date range based on time preference
-    today = datetime.now().date()
-    if time_preference == "Today":
-        preferences['date_range'] = (today, today)
-    elif time_preference == "This weekend":
-        # Find next Saturday and Sunday
-        days_until_saturday = (5 - today.weekday()) % 7
-        saturday = today + timedelta(days=days_until_saturday)
-        sunday = saturday + timedelta(days=1)
-        preferences['date_range'] = (saturday, sunday)
-    elif time_preference == "This week":
-        week_end = today + timedelta(days=7)
-        preferences['date_range'] = (today, week_end)
-    elif time_preference == "Next week":
-        next_week_start = today + timedelta(days=7)
-        next_week_end = next_week_start + timedelta(days=7)
-        preferences['date_range'] = (next_week_start, next_week_end)
-    elif time_preference == "This month":
-        month_end = today + timedelta(days=30)
-        preferences['date_range'] = (today, month_end)
+    date_range = get_date_range_for_time_preference(time_preference)
+    if date_range:
+        preferences['date_range'] = date_range
     
     # Accessibility needs
     st.subheader("♿ Accessibility")
     accessibility_needs = st.multiselect(
         "Accessibility requirements:",
-        ["Wheelchair accessible", "Sign language interpretation", "Audio description", "Large print materials"]
+        ACCESSIBILITY_OPTIONS
     )
     preferences['accessibility_requirements'] = accessibility_needs
     
@@ -130,7 +116,7 @@ def render_preferences_sidebar() -> Dict[str, Any]:
     st.subheader("👥 Group Size")
     group_size = st.selectbox(
         "How many people?",
-        ["Just me", "2 people", "Small group (3-6)", "Large group (7+)"]
+        GROUP_SIZE_OPTIONS
     )
     preferences['group_size'] = group_size
     
@@ -162,27 +148,13 @@ def render_event_map(events: List[Dict[str, Any]]) -> None:
 
 def get_mock_coordinates(location: str) -> tuple:
     """Get mock coordinates for a location (for demonstration)."""
-    # Mock coordinates for NYC areas
-    coordinates = {
-        'manhattan': (40.7831, -73.9712),
-        'brooklyn': (40.6782, -73.9442),
-        'queens': (40.7282, -73.7949),
-        'bronx': (40.8448, -73.8648),
-        'staten island': (40.5795, -74.1502),
-        'central park': (40.7829, -73.9654),
-        'times square': (40.7580, -73.9855),
-        'williamsburg': (40.7081, -73.9571),
-        'soho': (40.7230, -73.9991),
-        'greenwich village': (40.7335, -73.9976)
-    }
-    
     location_lower = location.lower()
-    for key, coords in coordinates.items():
+    for key, coords in NYC_COORDINATES.items():
         if key in location_lower:
             return coords
     
     # Default to Manhattan if location not found
-    return (40.7831, -73.9712)
+    return NYC_COORDINATES['manhattan']
 
 def render_event_statistics(stats: Dict[str, Any]) -> None:
     """Render event statistics and visualizations."""
@@ -230,16 +202,7 @@ def render_event_statistics(stats: Dict[str, Any]) -> None:
 
 def format_date(date_obj) -> str:
     """Format a date object for display."""
-    if not date_obj:
-        return "Date TBD"
-    
-    if isinstance(date_obj, str):
-        return date_obj
-    
-    try:
-        return date_obj.strftime("%B %d, %Y")
-    except:
-        return str(date_obj)
+    return format_date_for_display(date_obj)
 
 def format_price(price_dict: Dict[str, Any]) -> str:
     """Format price information for display."""
@@ -294,22 +257,18 @@ def render_search_filters() -> Dict[str, Any]:
         with col2:
             # Category filters
             st.subheader("🎭 Categories")
-            all_categories = ['Art & Culture', 'Music & Concerts', 'Food & Dining',
-                            'Outdoor Activities', 'Sports', 'Nightlife', 'Education']
             selected_categories = st.multiselect(
                 "Filter by category:",
-                all_categories,
+                EVENT_CATEGORIES,
                 key="search_categories"
             )
             filters['categories'] = selected_categories
             
             # Location filters
             st.subheader("📍 Location")
-            neighborhoods = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx',
-                           'Greenwich Village', 'SoHo', 'Williamsburg']
             selected_neighborhoods = st.multiselect(
                 "Filter by area:",
-                neighborhoods,
+                NYC_NEIGHBORHOODS,
                 key="search_neighborhoods"
             )
             filters['neighborhoods'] = selected_neighborhoods

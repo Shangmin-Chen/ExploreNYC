@@ -9,6 +9,9 @@ from typing import Dict, List, Any, Optional
 import requests
 import json
 from config import Config
+from .constants import DATE_FORMATS, MAX_EVENTS_DISPLAY
+from .date_utils import parse_date_string
+from .error_handling import safe_execute, log_error
 
 class EventProcessor:
     """Handles event data processing and management."""
@@ -46,19 +49,7 @@ class EventProcessor:
     
     def _parse_date(self, date_str: str) -> Optional[datetime]:
         """Parse date string into datetime object."""
-        if not date_str:
-            return None
-        
-        try:
-            # Try different date formats
-            for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%B %d, %Y', '%Y-%m-%d %H:%M:%S']:
-                try:
-                    return datetime.strptime(date_str, fmt)
-                except ValueError:
-                    continue
-            return None
-        except Exception:
-            return None
+        return parse_date_string(date_str)
     
     def _parse_price(self, price_str: str) -> Dict[str, Any]:
         """Parse price information."""
@@ -245,4 +236,4 @@ class EventProcessor:
         
         # Sort by score and return top recommendations
         scored_events.sort(key=lambda x: x[1], reverse=True)
-        return [event for event, score in scored_events[:20]]
+        return [event for event, score in scored_events[:MAX_EVENTS_DISPLAY]]

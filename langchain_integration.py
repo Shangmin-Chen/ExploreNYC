@@ -5,15 +5,17 @@ Handles AI-powered event recommendations and natural language processing using L
 
 from langchain_cohere import ChatCohere
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langchain_core.tools import tool
 from typing import Dict, List, Any, Optional, TypedDict, Annotated
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import Config
+from utils.constants import DEFAULT_EVENTS, RATE_LIMIT_SECONDS, MAX_RECOMMENDATIONS
+from utils.date_utils import process_time_frames, calculate_this_weekend
+from utils.error_handling import handle_api_error, log_error
 
 # Define the state for our LangGraph workflow
 class EventExplorerState(TypedDict):
@@ -26,82 +28,49 @@ class EventExplorerState(TypedDict):
     current_date: str
 
 @tool
-def nyc_event_search(query: str) -> str:
+def nyc_event_search(category: str = None, location: str = None, keywords: str = None, date_range: str = None) -> str:
     """Search for NYC events based on criteria like category, location, date, and keywords.
     
     Args:
-        query: A JSON string with search criteria including category, location, date_range, keywords
+        category: Event category (e.g., "Art", "Music", "Food")
+        location: Event location (e.g., "Brooklyn", "Manhattan")
+        keywords: Search keywords (e.g., "underground", "jazz")
+        date_range: Date range in format "start_date,end_date" (e.g., "2025-09-06,2025-09-07")
         
     Returns:
         JSON string containing list of matching events
     """
     try:
-        # Parse the query
-        criteria = json.loads(query) if query.startswith('{') else {"keywords": query}
+        # Build criteria from parameters
+        criteria = {}
+        if category:
+            criteria["category"] = category
+        if location:
+            criteria["location"] = location
+        if keywords:
+            criteria["keywords"] = keywords
+        if date_range:
+            criteria["date_range"] = date_range.split(",") if "," in date_range else [date_range, date_range]
         
-        # Mock event data for MVP (replace with actual API calls)
-        mock_events = [
-            {
-                "title": "Underground Art Show",
-                "description": "Emerging artists showcase at secret Brooklyn location",
-                "category": "Art",
-                "location": "Brooklyn",
-                "date": "2024-01-15",
-                "price": "Free",
-                "url": "https://example.com/event1",
-                "venue": "Secret Brooklyn Gallery",
-                "time": "7:00 PM",
-                "tags": ["art", "underground", "emerging artists"]
-            },
-            {
-                "title": "Jazz Night at Blue Note",
-                "description": "Live jazz performance with local musicians",
-                "category": "Music",
-                "location": "Manhattan",
-                "date": "2024-01-16",
-                "price": "$25",
-                "url": "https://example.com/event2",
-                "venue": "Blue Note Jazz Club",
-                "time": "8:00 PM",
-                "tags": ["jazz", "live music", "nightlife"]
-            },
-            {
-                "title": "Food Truck Festival",
-                "description": "50+ food trucks in Central Park",
-                "category": "Food",
-                "location": "Central Park",
-                "date": "2024-01-17",
-                "price": "Free entry",
-                "url": "https://example.com/event3",
-                "venue": "Central Park",
-                "time": "12:00 PM",
-                "tags": ["food", "outdoor", "family-friendly"]
-            },
-            {
-                "title": "Comedy Night at The Comedy Cellar",
-                "description": "Stand-up comedy featuring NYC's best comedians",
-                "category": "Entertainment",
-                "location": "Manhattan",
-                "date": "2024-01-18",
-                "price": "$20",
-                "url": "https://example.com/event4",
-                "venue": "The Comedy Cellar",
-                "time": "9:00 PM",
-                "tags": ["comedy", "stand-up", "nightlife"]
-            },
-            {
-                "title": "Brooklyn Bridge Walking Tour",
-                "description": "Guided historical walking tour of the Brooklyn Bridge",
-                "category": "Outdoor",
-                "location": "Brooklyn",
-                "date": "2024-01-19",
-                "price": "$15",
-                "url": "https://example.com/event5",
-                "venue": "Brooklyn Bridge",
-                "time": "10:00 AM",
-                "tags": ["outdoor", "history", "walking tour"]
-            }
-        ]
+        # Use default events with calculated dates
+        current_date = datetime.now()
+        
+        # Calculate dates for realistic event scheduling
+        saturday, sunday = calculate_this_weekend(current_date)
+        next_monday = saturday + timedelta(days=2)
+        next_tuesday = next_monday + timedelta(days=1)
+        next_wednesday = next_monday + timedelta(days=2)
+        next_thursday = next_monday + timedelta(days=3)
+        
+        # Create events with calculated dates
+        mock_events = []
+        for i, event_template in enumerate(DEFAULT_EVENTS):
+            event = event_template.copy()
+            # Assign dates based on event index
+            date_map = [saturday, next_monday, next_tuesday, next_wednesday, next_thursday]
+            if i < len(date_map):
+                event["date"] = date_map[i].strftime("%Y-%m-%d")
+            mock_events.append(event)
         
         # Filter events based on criteria
         filtered_events = []
@@ -113,6 +82,19 @@ def nyc_event_search(query: str) -> str:
             # Location filter
             if criteria.get("location") and criteria["location"].lower() not in event["location"].lower():
                 continue
+            
+            # Date range filter (if specified in criteria)
+            if criteria.get("date_range"):
+                try:
+                    event_date = datetime.strptime(event["date"], "%Y-%m-%d").date()
+                    start_date = datetime.strptime(criteria["date_range"][0], "%Y-%m-%d").date()
+                    end_date = datetime.strptime(criteria["date_range"][1], "%Y-%m-%d").date()
+                    
+                    if not (start_date <= event_date <= end_date):
+                        continue
+                except (ValueError, TypeError):
+                    # If date parsing fails, continue without date filtering
+                    pass
             
             # Keyword filter
             if criteria.get("keywords"):
@@ -189,9 +171,9 @@ def generate_recommendations(user_preferences: str, events: str) -> str:
         recommendations.sort(key=lambda x: x['score'], reverse=True)
         
         return json.dumps({
-            "recommendations": recommendations[:3],  # Top 3
+            "recommendations": recommendations[:MAX_RECOMMENDATIONS],
             "total_events_considered": len(event_list),
-            "message": f"Found {len(event_list)} events, recommending the top 3 based on your preferences."
+            "message": f"Found {len(event_list)} events, recommending the top {MAX_RECOMMENDATIONS} based on your preferences."
         })
         
     except Exception as e:
@@ -206,6 +188,8 @@ class EventExplorerAgent:
         self.tools = [nyc_event_search, generate_recommendations]
         self.tool_node = ToolNode(self.tools)
         self.graph = self._create_graph()
+        self.last_request_time = 0
+        self.request_count = 0
         
     def _initialize_llm(self) -> ChatCohere:
         """Initialize the language model."""
@@ -227,21 +211,31 @@ class EventExplorerAgent:
         from hidden underground venues to mainstream attractions. You have access to tools to search for events and can provide 
         personalized recommendations.
 
+        IMPORTANT: You MUST use the available tools to search for events. Do not make up information.
+
+        Available tools:
+        1. nyc_event_search(category, location, keywords, date_range) - Search for events with these parameters:
+           - category: "Art", "Music", "Food", "Entertainment", "Outdoor"
+           - location: "Brooklyn", "Manhattan", "Queens", "Bronx", "Central Park"
+           - keywords: any search terms like "underground", "jazz", "free"
+           - date_range: "start_date,end_date" format like "2025-09-06,2025-09-07"
+        2. generate_recommendations - Use this tool to provide personalized recommendations based on user preferences
+
+        Your workflow:
+        1. ALWAYS use nyc_event_search first to find relevant events
+        2. Extract search criteria from the user's query and date range information
+        3. Call nyc_event_search with appropriate parameters
+        4. Then use generate_recommendations to provide personalized suggestions
+        5. Provide detailed, helpful information about the events found
+        6. Include practical details like location, time, cost, and how to get there
+
         Your personality:
         - Enthusiastic about NYC culture and events
         - Knowledgeable about different neighborhoods and venues
         - Helpful in finding both popular and off-the-beaten-path experiences
         - Considerate of budget, time, and accessibility needs
 
-        When users ask about events:
-        1. Use the nyc_event_search tool to find relevant events
-        2. Use the generate_recommendations tool to provide personalized suggestions
-        3. Provide detailed, helpful information
-        4. Include practical details like location, time, cost, and how to get there
-        5. Suggest related events or alternatives
-        6. Be conversational and engaging
-
-        Always be helpful and provide actionable information about NYC events."""
+        Remember: ALWAYS use the tools to search for events. Do not respond without searching first."""
         
         def should_continue(state: EventExplorerState) -> str:
             """Determine whether to continue the workflow or end."""
@@ -251,9 +245,16 @@ class EventExplorerAgent:
             # If the last message is from the user, we should continue
             if isinstance(last_message, HumanMessage):
                 return "continue"
-            # If the last message is from the assistant, we should end
+            # If the last message is from the assistant, check if it has tool calls
             elif isinstance(last_message, AIMessage):
-                return "end"
+                # Check if the message has tool calls that need to be executed
+                if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+                    return "continue"  # Continue to tools node
+                else:
+                    return "end"  # End if no tool calls
+            # If the last message is a tool message, continue to get final response
+            elif hasattr(last_message, '__class__') and 'ToolMessage' in str(last_message.__class__):
+                return "continue"
             else:
                 return "continue"
         
@@ -280,8 +281,18 @@ class EventExplorerAgent:
             
             # If the last message has tool calls, execute them
             if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-                tool_messages = self.tool_node.invoke({"messages": [last_message]})
-                return {"messages": tool_messages["messages"]}
+                try:
+                    tool_messages = self.tool_node.invoke({"messages": [last_message]})
+                    return {"messages": tool_messages["messages"]}
+                except Exception as e:
+                    print(f"Tool execution error: {e}")
+                    # Return an error message as ToolMessage
+                    from langchain_core.messages import ToolMessage
+                    error_message = ToolMessage(
+                        content=f"I encountered an error while searching for events: {str(e)}",
+                        tool_call_id="error"
+                    )
+                    return {"messages": [error_message]}
             else:
                 return {"messages": []}
         
@@ -314,9 +325,20 @@ class EventExplorerAgent:
     def process_query(self, user_input: str, user_preferences: Dict[str, Any] = None) -> str:
         """Process a user query and return a response using LangGraph."""
         try:
+            # Simple rate limiting for trial API keys
+            current_time = datetime.now().timestamp()
+            if current_time - self.last_request_time < RATE_LIMIT_SECONDS:
+                return f"Please wait a moment before making another request. I'm rate limited to {60//RATE_LIMIT_SECONDS} requests per minute."
+            
+            self.last_request_time = current_time
+            self.request_count += 1
+            
+            # Pre-process the query to extract and calculate time frames
+            processed_input = process_time_frames(user_input)
+            
             # Create initial state
             initial_state = {
-                "messages": [HumanMessage(content=user_input)],
+                "messages": [HumanMessage(content=processed_input)],
                 "user_preferences": user_preferences or {},
                 "search_criteria": {},
                 "events": [],
@@ -339,7 +361,8 @@ class EventExplorerAgent:
                 return "I'm sorry, I couldn't process your request. Please try again."
             
         except Exception as e:
-            return f"I'm sorry, I encountered an error while processing your request: {str(e)}. Please make sure your Cohere API key is properly configured."
+            log_error(e, "process_query")
+            return handle_api_error(e)
     
     def get_conversation_history(self) -> List[Dict[str, str]]:
         """Get the conversation history from the current state."""
@@ -351,3 +374,5 @@ class EventExplorerAgent:
         """Clear the conversation history."""
         # LangGraph manages state internally, so this is handled by creating new instances
         pass
+    
+
