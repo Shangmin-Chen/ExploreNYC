@@ -36,9 +36,6 @@ class Config:
     LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
     LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
     
-    # Eventbrite API Configuration
-    EVENTBRITE_API_KEY = os.getenv("EVENTBRITE_API_KEY")
-    
     # NYC Open Data API (no token required - completely free and open)
     # No configuration needed for NYC Open Data API
     

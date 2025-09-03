@@ -17,7 +17,7 @@ ExploreNYC is an intelligent event discovery application that uses artificial in
 - **Smart Query Processing**: Understands complex requests like "Find underground art shows this weekend"
 
 ### 📊 Real-Time Event Data
-- **Multiple Data Sources**: Integrates with Eventbrite and NYC Open Data APIs
+- **NYC Open Data API**: Integrates with NYC Open Data for official events
 - **Live Event Information**: Real-time data from official sources
 - **Comprehensive Coverage**: From mainstream events to hidden gems
 
@@ -88,15 +88,6 @@ ExploreNYC is an intelligent event discovery application that uses artificial in
    COHERE_API_KEY=your_cohere_api_key_here
    ```
 
-### Optional: Eventbrite API Key
-1. Visit [Eventbrite API Keys](https://www.eventbrite.com/platform/api-keys/)
-2. Sign up for a free account (1,000 requests/day)
-3. Generate an API key
-4. Add it to your `.env` file:
-   ```
-   EVENTBRITE_API_KEY=your_eventbrite_api_key_here
-   ```
-
 ### Optional: LangChain API Key
 1. Visit [LangChain Smith](https://smith.langchain.com/)
 2. Sign up for tracing and monitoring
@@ -119,7 +110,6 @@ ExploreNYC/
 ├── langchain_integration.py # AI agent and LangGraph workflows
 ├── services/              # API service integrations
 │   ├── event_service.py   # Unified event service
-│   ├── eventbrite_service.py # Eventbrite API integration
 │   └── nyc_open_data_service.py # NYC Open Data integration
 └── utils/                 # Utility modules
     ├── constants.py       # Application constants
@@ -133,7 +123,7 @@ ExploreNYC/
 
 - **Frontend**: Streamlit
 - **AI/ML**: LangChain, LangGraph, Cohere
-- **Data Sources**: Eventbrite API, NYC Open Data API
+- **Data Sources**: NYC Open Data API
 - **Language**: Python 3.8+
 - **Dependencies**: See `requirements.txt`
 
@@ -172,7 +162,6 @@ ExploreNYC/
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `COHERE_API_KEY` | Yes | Cohere API key for AI functionality |
-| `EVENTBRITE_API_KEY` | No | Eventbrite API key for commercial events |
 | `LANGCHAIN_API_KEY` | No | LangChain API key for tracing |
 | `LANGCHAIN_TRACING_V2` | No | Enable LangChain tracing (true/false) |
 
@@ -271,7 +260,6 @@ export LANGCHAIN_API_KEY=your_key_here
 ### Rate Limiting
 
 - **Cohere API**: 6 seconds between requests (10 requests/minute)
-- **Eventbrite API**: 1 second between requests
 - **NYC Open Data**: 1 second between requests
 
 ### Optimization Tips
@@ -323,7 +311,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Cohere** for providing the AI language models
 - **LangChain** for the AI framework and tools
 - **Streamlit** for the web application framework
-- **Eventbrite** for event data API
 - **NYC Open Data** for free public event data
 - **NYC** for being an amazing city with endless events to discover!
 

@@ -2,7 +2,7 @@
 Unified event service that combines multiple event sources.
 
 This module provides a single interface for fetching events from multiple sources
-including Eventbrite and NYC Open Data. It handles data aggregation, deduplication,
+including NYC Open Data. It handles data aggregation, deduplication,
 and provides a consistent API for event discovery.
 
 Features:
@@ -23,7 +23,6 @@ import concurrent.futures
 # Local imports
 from config import Config
 from utils.error_handling import log_error
-from .eventbrite_service import EventbriteService
 from .nyc_open_data_service import NYCOpenDataService
 
 class EventService:
@@ -31,7 +30,7 @@ class EventService:
     Unified service for fetching events from multiple sources.
     
     This class provides a single interface to access events from various sources
-    including Eventbrite and NYC Open Data. It handles service initialization,
+    including NYC Open Data. It handles service initialization,
     data aggregation, and provides consistent event data format.
     """
     
@@ -44,13 +43,6 @@ class EventService:
         """
         self.services = {}
         
-        # Initialize Eventbrite service if API key is available
-        try:
-            if Config.EVENTBRITE_API_KEY:
-                self.services['eventbrite'] = EventbriteService()
-        except ValueError as e:
-            log_error(e, "Eventbrite service not available")
-        
         # Initialize NYC Open Data service (always available - free)
         try:
             self.services['nyc_open_data'] = NYCOpenDataService()
@@ -59,7 +51,7 @@ class EventService:
         
         # Ensure at least one service is available
         if not self.services:
-            raise ValueError("No event services available. Please configure at least one API key or use NYC Open Data.")
+            raise ValueError("No event services available. NYC Open Data service should be available.")
     
     def search_events(self, 
                      location: str = "New York, NY",

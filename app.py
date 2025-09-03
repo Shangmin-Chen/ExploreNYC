@@ -2,11 +2,11 @@
 ExploreNYC - AI-Powered Event Explorer
 
 A Streamlit application that uses LangChain and AI to help users discover
-NYC events from multiple sources including Eventbrite and NYC Open Data.
+NYC events from NYC Open Data.
 
 Features:
 - AI-powered event recommendations using Cohere
-- Real-time event data from multiple APIs
+- Real-time event data from NYC Open Data API
 - Interactive chat interface
 - Personalized event filtering
 - Beautiful, responsive UI
