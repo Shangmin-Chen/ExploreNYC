@@ -159,18 +159,9 @@ def main():
             st.session_state.conversation_history.append({"role": "user", "content": suggested_query})
             st.rerun()
         
-        # Event statistics (placeholder)
+        # Event statistics
         st.header("📊 Event Insights")
-        
-        # Sample data for demonstration
-        sample_data = pd.DataFrame({
-            'Category': ['Art', 'Music', 'Food', 'Outdoor'],
-            'Events': [45, 32, 28, 15]
-        })
-        
-        fig = px.pie(sample_data, values='Events', names='Category', 
-                    title="Events by Category (This Week)")
-        st.plotly_chart(fig, use_container_width=True)
+        st.info("📈 Event statistics will be available once you search for events!")
     
     # Footer
     st.markdown("---")
